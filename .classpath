@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/j3d-1.5.2-windows-i586"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/JMF-2.1.1e"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NyARToolKit"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NyARToolkit.utils.java3d"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/NyARToolkit.utils.jmf"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
