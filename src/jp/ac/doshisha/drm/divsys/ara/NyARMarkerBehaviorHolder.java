@@ -237,7 +237,6 @@ class NyARBehaviorMany extends Behavior
 						int arcode_index = related_nya.getARCodeIndex(i);
 						is_marker_exist[arcode_index] = true;
 						if (trgroups[arcode_index] != null) {
-//							final NyARTransMatResult src = this.trans_mat_result;
 							related_nya.getTransmationMatrix(i, src);
 //							Matrix4d matrix = new Matrix4d(src.m00, -src.m10, -src.m20, 0, -src.m01, src.m11, src.m21, 0, -src.m02, src.m12, src.m22, 0, -src.m03, src.m13, src.m23, 1);
 							Matrix4d matrix = new Matrix4d(
