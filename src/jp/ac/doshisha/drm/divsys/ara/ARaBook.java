@@ -143,7 +143,7 @@ public class ARaBook extends JFrame implements NyARSingleMarkerBehaviorListener
 		root.addChild(transform);
 
 		//NyARToolkitのBehaviorを作る。(マーカーサイズはメートルで指定すること)
-		nya_behavior = new NyARMarkerBehaviorHolder(ar_param, 30f, new NyARCode[] {ar_code}, new double[] {0.08}, 1);
+		nya_behavior = new NyARMarkerBehaviorHolder(ar_param, 30f, new NyARCode[] {ar_code}, new double[] {0.08}, 1, 0.75);
 		//Behaviorに連動するグループをセット
 		nya_behavior.setTransformGroup(0, transform);
 		nya_behavior.setBackGround(background);

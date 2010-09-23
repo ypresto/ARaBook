@@ -63,10 +63,12 @@ public class NyARMarkerBehaviorHolder implements JmfCaptureListener
 
 	//Behaviorホルダ
 	private NyARBehaviorMany _nya_behavior;
+	
+	private double min_confidence;
 
-	public NyARMarkerBehaviorHolder(NyARParam i_cparam, float i_rate, NyARCode[] i_ar_code, double[] i_marker_width, int i_number_of_code) throws NyARException
+	public NyARMarkerBehaviorHolder(NyARParam i_cparam, float i_rate, NyARCode[] i_ar_code, double[] i_marker_width, int i_number_of_code, double i_min_confidence) throws NyARException
 	{
-		this._nya_behavior = null;
+		this.min_confidence = i_min_confidence;
 		final NyARIntSize scr_size = i_cparam.getScreenSize();
 		this._cparam = i_cparam;
 		//キャプチャの準備
@@ -76,7 +78,7 @@ public class NyARMarkerBehaviorHolder implements JmfCaptureListener
 		this._capture.setOnCapture(this);		
 		this._nya_raster = new J3dNyARRaster_RGB(this._cparam,this._capture.getCaptureFormat());
 		this._nya = new NyARDetectMarker(this._cparam, i_ar_code, i_marker_width, i_number_of_code,this._nya_raster.getBufferType());
-		this._nya_behavior = new NyARBehaviorMany(this._nya, i_number_of_code, this._nya_raster, i_rate);
+		this._nya_behavior = new NyARBehaviorMany(this._nya, i_number_of_code, this.min_confidence, this._nya_raster, i_rate);
 	}
 
 	public Behavior getBehavior()
@@ -163,6 +165,8 @@ class NyARBehaviorMany extends Behavior
 	
 	private int number_of_code;
 
+	private double min_confidence;
+
 	public void initialize()
 	{
 		wakeupOn(wakeup);
@@ -173,7 +177,7 @@ class NyARBehaviorMany extends Behavior
 	 * @param i_back_ground
 	 * @param i_related_ic2d
 	 */
-	public NyARBehaviorMany(NyARDetectMarker i_related_nya, int i_number_of_code, J3dNyARRaster_RGB i_related_raster, float i_rate)
+	public NyARBehaviorMany(NyARDetectMarker i_related_nya, int i_number_of_code, double i_min_confidence, J3dNyARRaster_RGB i_related_raster, float i_rate)
 	{
 		super();
 		number_of_code = i_number_of_code;
@@ -182,8 +186,9 @@ class NyARBehaviorMany extends Behavior
 		trgroups = new TransformGroup[i_number_of_code];
 		raster = i_related_raster;
 		back_ground = null;
-		listeners = new NyARSingleMarkerBehaviorListener[i_number_of_code];
+		listeners = new NyARSingleMarkerBehaviorListener[this.number_of_code];
 		this.setSchedulingBounds(new BoundingSphere(new Point3d(), 100.0));
+		min_confidence = i_min_confidence;
 	}
 
 	public void setRelatedBackGround(Background i_back_ground)
@@ -226,6 +231,9 @@ class NyARBehaviorMany extends Behavior
 					final NyARTransMatResult src = this.trans_mat_result;
 					for (int i = 0; i < num_marker_exist; i++)
 					{
+						if (related_nya.getConfidence(i) < min_confidence) {
+							continue;
+						}
 						int arcode_index = related_nya.getARCodeIndex(i);
 						is_marker_exist[arcode_index] = true;
 						if (trgroups[arcode_index] != null) {
