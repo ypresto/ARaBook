@@ -8,8 +8,8 @@
  * 
  * NyARMarkerBehaviorHolder
  * Copyright (c) 2010 yuya_presto
- * Forked from NyARSingleMarkerBehaviorHolder,
- * adds support for many arcode
+ * Forked from NyARSingleMarkerBehaviorHolder
+ * to add support for many markers
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -115,10 +115,10 @@ public class NyARMarkerBehaviorHolder implements JmfCaptureListener
 	 * マーカーのインデックス番号を指定します。
 	 * @param i_listener
 	 */
-	public void setUpdateListener(int i_index, NyARSingleMarkerBehaviorListener i_listener)
+	public void setUpdateListener(int i_index, NyARMarkerBehaviorListener i_listener)
 	{
 		//コール先で排他制御
-		this._nya_behavior.setUpdateListener(i_index, i_listener);
+		this._nya_behavior.setUpdateListener(i_listener);
 	}
 
 	/**
@@ -161,7 +161,7 @@ class NyARBehaviorMany extends Behavior
 
 	private WakeupCondition wakeup;
 
-	private NyARSingleMarkerBehaviorListener[] listeners;
+	private NyARMarkerBehaviorListener listener;
 	
 	private int number_of_code;
 
@@ -186,7 +186,7 @@ class NyARBehaviorMany extends Behavior
 		trgroups = new TransformGroup[i_number_of_code];
 		raster = i_related_raster;
 		back_ground = null;
-		listeners = new NyARSingleMarkerBehaviorListener[this.number_of_code];
+		listener = null;
 		this.setSchedulingBounds(new BoundingSphere(new Point3d(), 100.0));
 		min_confidence = i_min_confidence;
 	}
@@ -205,10 +205,10 @@ class NyARBehaviorMany extends Behavior
 		}
 	}
 
-	public void setUpdateListener(int i_index, NyARSingleMarkerBehaviorListener i_listener)
+	public void setUpdateListener(NyARMarkerBehaviorListener i_listener)
 	{
 		synchronized (raster) {
-			listeners[i_index] = i_listener;
+			listener = i_listener;
 		}
 	}
 
@@ -219,9 +219,9 @@ class NyARBehaviorMany extends Behavior
 	{
 		try {
 			synchronized (raster) {
-				Transform3D t3d = null;
+				Transform3D[] t3d = new Transform3D[number_of_code];
+				boolean[] is_marker_exist = new boolean[number_of_code];
 				int num_marker_exist = 0;
-				boolean is_marker_exist[] = new boolean[number_of_code];
 				if (back_ground != null) {
 					raster.renewImageComponent2D();/*DirectXモードのときの対策*/
 					back_ground.setImage(raster.getImageComponent2D());
@@ -245,16 +245,12 @@ class NyARBehaviorMany extends Behavior
 									-src.m02, -src.m12, src.m22, 0,
 									-src.m03,-src.m13, src.m23, 1);
 							matrix.transpose();
-							t3d = new Transform3D(matrix);
-							trgroups[arcode_index].setTransform(t3d);
+							t3d[arcode_index] = new Transform3D(matrix);
+							trgroups[arcode_index].setTransform(t3d[arcode_index]);
 						}
 					}
 				}
-				for (int i = 0; i < number_of_code; i++) {
-					if (listeners[i] != null) {
-						listeners[i].onUpdate(is_marker_exist[i], t3d);
-					}
-				}
+				listener.onUpdate(is_marker_exist, t3d);
 			}
 			wakeupOn(wakeup);
 		} catch (Exception e) {

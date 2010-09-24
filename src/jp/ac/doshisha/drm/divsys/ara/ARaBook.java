@@ -27,23 +27,31 @@
 package jp.ac.doshisha.drm.divsys.ara;
 
 import java.awt.BorderLayout;
-import javax.media.j3d.*;
+import java.awt.Insets;
 
-import com.sun.j3d.utils.universe.*;
-import java.awt.*;
+import javax.media.j3d.Background;
+import javax.media.j3d.BoundingSphere;
+import javax.media.j3d.BranchGroup;
+import javax.media.j3d.Canvas3D;
+import javax.media.j3d.Locale;
+import javax.media.j3d.PhysicalBody;
+import javax.media.j3d.PhysicalEnvironment;
+import javax.media.j3d.Transform3D;
+import javax.media.j3d.TransformGroup;
+import javax.media.j3d.View;
+import javax.media.j3d.ViewPlatform;
+import javax.media.j3d.VirtualUniverse;
 import javax.swing.JFrame;
-import javax.vecmath.*;
+import javax.vecmath.Vector3d;
 
-import jp.nyatla.nyartoolkit.core.*;
-import jp.nyatla.nyartoolkit.java3d.utils.*;
+import jp.ac.doshisha.drm.divsys.ara.nodes.test.TestNode;
+import jp.nyatla.nyartoolkit.java3d.utils.J3dNyARParam;
 
-import com.sun.j3d.utils.geometry.ColorCube;
+import com.sun.j3d.utils.universe.SimpleUniverse;
 
-public class ARaBook extends JFrame implements NyARSingleMarkerBehaviorListener
+public class ARaBook extends JFrame implements NyARMarkerBehaviorListener
 {
 	private static final long serialVersionUID = -8472866262481865377L;
-
-	private final String CARCODE_FILE = "Data/patt.hiro";
 
 	private final String PARAM_FILE = "Data/camera_para.dat";
 
@@ -58,6 +66,8 @@ public class ARaBook extends JFrame implements NyARSingleMarkerBehaviorListener
 	private Locale locale;
 
 	private VirtualUniverse universe;
+	
+	private ARaNode[] nodes;
 
 	public static void main(String[] args)
 	{
@@ -74,8 +84,9 @@ public class ARaBook extends JFrame implements NyARSingleMarkerBehaviorListener
 		}
 	}
 
-	public void onUpdate(boolean i_is_marker_exist, Transform3D i_transform3d)
+	public void onUpdate(boolean i_is_marker_exist[], Transform3D i_transform3d[])
 	{
+		ARaNode.renewNodesByUpdate(nodes, i_is_marker_exist, i_transform3d);
 		/*
 		 * TODO:Please write your behavior operation code here.
 		 * マーカーの姿勢を元に他の３Dオブジェクトを操作するときは、ここに処理を書きます。*/
@@ -92,8 +103,6 @@ public class ARaBook extends JFrame implements NyARSingleMarkerBehaviorListener
 		super("Java3D Example NyARToolkit");
 
 		//NyARToolkitの準備
-		NyARCode ar_code = new NyARCode(16, 16);
-		ar_code.loadARPattFromFile(CARCODE_FILE);
 		ar_param = new J3dNyARParam();
 		ar_param.loadARParamFromFile(PARAM_FILE);
 		ar_param.changeScreenSize(320, 240);
@@ -136,16 +145,12 @@ public class ARaBook extends JFrame implements NyARSingleMarkerBehaviorListener
 		BranchGroup root = new BranchGroup();
 		root.addChild(background);
 
-		//TransformGroupで囲ったシーングラフの作成
-		TransformGroup transform = new TransformGroup();
-		transform.setCapability(TransformGroup.ALLOW_TRANSFORM_WRITE);
-		transform.addChild(createSceneGraph());
-		root.addChild(transform);
-
-		//NyARToolkitのBehaviorを作る。(マーカーサイズはメートルで指定すること)
-		nya_behavior = new NyARMarkerBehaviorHolder(ar_param, 30f, new NyARCode[] {ar_code}, new double[] {0.08}, 1, 0.75);
-		//Behaviorに連動するグループをセット
-		nya_behavior.setTransformGroup(0, transform);
+		// TestNodeを登録
+		ARaNode node1 = new TestNode();
+		nodes = new ARaNode[] {node1};
+		
+		//NyARToolkitのBehaviorを作る。
+		nya_behavior = ARaNode.createNyARMarkerBehaviorHolder(ar_param, 30f, nodes, 0.50, root);
 		nya_behavior.setBackGround(background);
 
 		//出来たbehaviorをセット
@@ -158,21 +163,5 @@ public class ARaBook extends JFrame implements NyARSingleMarkerBehaviorListener
 		//ウインドウの設定
 		setLayout(new BorderLayout());
 		add(canvas, BorderLayout.CENTER);
-	}
-
-	/**
-	 * シーングラフを作って、そのノードを返す。
-	 * このノードは40mmの色つき立方体を表示するシーン。ｚ軸を基準に20mm上に浮かせてる。
-	 * @return
-	 */
-	private Node createSceneGraph()
-	{
-		TransformGroup tg = new TransformGroup();
-		Transform3D mt = new Transform3D();
-		mt.setTranslation(new Vector3d(0.00, 0.0, 20 * 0.001));
-		// 大きさ 40mmの色付き立方体を、Z軸上で20mm動かして配置）
-		tg.setTransform(mt);
-		tg.addChild(new ColorCube(20 * 0.001));
-		return tg;
 	}
 }
