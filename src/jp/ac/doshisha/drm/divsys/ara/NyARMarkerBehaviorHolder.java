@@ -221,6 +221,7 @@ class NyARBehaviorMany extends Behavior
 			synchronized (raster) {
 				Transform3D[] t3d = new Transform3D[number_of_code];
 				boolean[] is_marker_exist = new boolean[number_of_code];
+				double[] confidence = new double[number_of_code];
 				int num_marker_exist = 0;
 				if (back_ground != null) {
 					raster.renewImageComponent2D();/*DirectXモードのときの対策*/
@@ -231,23 +232,37 @@ class NyARBehaviorMany extends Behavior
 					final NyARTransMatResult src = this.trans_mat_result;
 					for (int i = 0; i < num_marker_exist; i++)
 					{
-						if (related_nya.getConfidence(i) < min_confidence) {
+						double confidence_cur = related_nya.getConfidence(i);
+						if (confidence_cur < min_confidence) {
+							/* 指定された最低一致率よりも低い */
 							continue;
 						}
 						int arcode_index = related_nya.getARCodeIndex(i);
-						is_marker_exist[arcode_index] = true;
-						if (trgroups[arcode_index] != null) {
-							related_nya.getTransmationMatrix(i, src);
-//							Matrix4d matrix = new Matrix4d(src.m00, -src.m10, -src.m20, 0, -src.m01, src.m11, src.m21, 0, -src.m02, src.m12, src.m22, 0, -src.m03, src.m13, src.m23, 1);
-							Matrix4d matrix = new Matrix4d(
-									-src.m00, -src.m10, src.m20, 0,
-									-src.m01, -src.m11, src.m21, 0,
-									-src.m02, -src.m12, src.m22, 0,
-									-src.m03,-src.m13, src.m23, 1);
-							matrix.transpose();
-							t3d[arcode_index] = new Transform3D(matrix);
-							trgroups[arcode_index].setTransform(t3d[arcode_index]);
+						if (confidence_cur <= confidence[arcode_index]) {
+							/* すでに検出済みのマーカーの方が一致率が高い。 */
+							/* XXX: これは、一致率が低い、間違ったマーカーが検出された場合の対策だが、
+							 * 本当に同一のマーカーが2つ検出されている場合は、
+							 * 1つ目、2つ目のマーカーをチカチカと行き来してしまう可能性がある。
+							 */
+							continue;
 						}
+						is_marker_exist[arcode_index] = true;
+						/* FIXME: 複数の同一マーカーが見つかったときに、一致率の高いものがindexが最後に保存されていると、
+						 * 見つかったマーカー-1回分だけ無駄な行列演算を行うことになる。
+						 * 一度各マーカーごとに一致率が一番高いindexを求めておいて、
+						 * 後からまとめて行列演算することが望ましい。
+						 */
+						related_nya.getTransmationMatrix(i, src);
+//						Matrix4d matrix = new Matrix4d(src.m00, -src.m10, -src.m20, 0, -src.m01, src.m11, src.m21, 0, -src.m02, src.m12, src.m22, 0, -src.m03, src.m13, src.m23, 1);
+						Matrix4d matrix = new Matrix4d(
+								-src.m00, -src.m10, src.m20, 0,
+								-src.m01, -src.m11, src.m21, 0,
+								-src.m02, -src.m12, src.m22, 0,
+								-src.m03,-src.m13, src.m23, 1);
+						matrix.transpose();
+						t3d[arcode_index] = new Transform3D(matrix);
+						trgroups[arcode_index].setTransform(t3d[arcode_index]);
+						confidence[arcode_index] = confidence_cur;
 					}
 				}
 				listener.onUpdate(is_marker_exist, t3d);
